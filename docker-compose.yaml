@@ -1,0 +1,64 @@
+version: '3.8'
+
+x-healthcheck_timings: &healthcheck_timings
+  interval: 2s
+  timeout: 2s
+  start_period: 4s
+  retries: 40
+
+services:
+  # proxy:
+  #   image: traefik:2.5
+  #   command:
+  #     - '--api'
+  #     # Enables the web UI and tells Traefik to listen to docker
+  #     - '--api.insecure=true'
+  #     - '--api.dashboard=true'
+  #     - '--log=true'
+  #     - '--log.level=DEBUG'
+  #     # - '--providers.docker'
+  #     - '--providers.file.directory=/etc/traefik/'
+  #     - '--entrypoints.http=true'
+  #     - '--entrypoints.http.address=:80'
+  #     # - '--entrypoints.http.http.redirections.entrypoint.to=https'
+  #     # - '--entrypoints.http.http.redirections.entrypoint.scheme=https'
+  #     # - '--entrypoints.https=true'
+  #     # - '--entrypoints.https.address=:443'
+  #   ports:
+  #     # The HTTP port
+  #     - '80:80'
+  #     - '443:443'
+  #     # The Web UI (enabled by --api.insecure=true)
+  #     # - '8080:8080'
+  #   volumes:
+  #     - ./config/traefik:/etc/traefik
+  #     # So that Traefik can listen to the Docker events
+  #     - /var/run/docker.sock:/var/run/docker.sock
+
+  # secure:
+  #   image: traefik/whoami
+
+  # public:
+  #   image: traefik/whoami
+
+  db:
+    image: mysql:8
+    volumes:
+      - ./data/db.sql:/docker-entrypoint-initdb.d/001.sql
+      # - ./data/mysql:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=bots
+      - MYSQL_USER=bots
+      - MYSQL_PASSWORD=bots
+    ports:
+      - 33006:3306
+    healthcheck:
+      <<: *healthcheck_timings
+      test:
+        - CMD
+        - mysqladmin
+        - ping
+        - --host=authn-db
+        - --user=root
+        - --password=$$MYSQL_ROOT_PASSWORD
